@@ -74,7 +74,7 @@ if __name__ == '__main__':
                 outputs = cnn(inputs)
                 loss = loss_fn(outputs.flatten().float(), targets.float())
                 val_loss += loss
-            print("Step:%d valid-Loss is %f:" % (e, losses))
+            print("Step:%d valid-Loss is %f:" % (e, val_loss))
 
         if val_loss < score:
             score = val_loss
