@@ -33,7 +33,12 @@ def circle(r):
 class MyDataset(Dataset):
     def __init__(self, img_path):
         self.mask = circle(15.5)
-        self.img_data = unpickle(img_path)[b'data']
+        if isinstance(img_path, str):
+            self.img_data = unpickle(img_path)[b'data']
+        if isinstance(img_path, list):
+            self.img_data = unpickle(img_path[0])[b'data']
+            for p in img_path[1:]:
+                self.img_data = np.row_stack((self.img_data, unpickle(p)[b'data']))
 
     def __len__(self):
         return self.img_data.shape[0]

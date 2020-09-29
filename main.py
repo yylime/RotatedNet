@@ -29,7 +29,7 @@ if __name__ == '__main__':
         device = 'cpu'
     device = torch.device(device)
     # 构建数据读取
-    path = 'imgs/data_batch_1'
+    path = ['imgs/data_batch_1', 'imgs/data_batch_2', 'imgs/data_batch_3', 'imgs/data_batch_4', 'imgs/data_batch_5']
     val_path = 'imgs/test_batch'
     train_dst = MyDataset(path)
     valid_dst = MyDataset(val_path)
@@ -40,7 +40,7 @@ if __name__ == '__main__':
     # 模型
     cnn = cnn()
     cnn.to(device)
-    print(cnn)
+    # print(cnn)
     # 配置
     loss_fn = nn.MSELoss()
     optimizer = optim.Adam(cnn.parameters(), lr=1e-3, weight_decay=1e-4)
