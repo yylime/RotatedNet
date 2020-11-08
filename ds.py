@@ -4,7 +4,7 @@
 # @Author  : yulin
 # @E-mail  : 844202100@qq.com 
 # @School  : bupt
-# @File    : cifar_ds.py
+# @File    : ds.py
 
 from torch.utils.data import Dataset
 import numpy as np
@@ -19,6 +19,7 @@ def unpickle(file):
     return dict
 
 
+# 圆形mask
 def circle(r):
     D = int(2 * r) + 1
     mask = np.zeros(shape=(D, D, 3), dtype=np.int)
@@ -28,6 +29,23 @@ def circle(r):
         right = int(r + d)
         mask[i, left + 1:right + 1, :] = 1
     return mask
+
+
+# 随机剪裁
+def random_crop(img, size):
+    h, w = img.shape[:2]
+    x, y = np.random.randint(0, h - size), np.random.randint(0, w - size)
+    return img[x:x + size, y:y + size]
+
+
+# 剔除过小的图片
+def clear_path(paths, size):
+    ret = []
+    for p in paths:
+        h, w = cv2.imread(p).shape[:2]
+        if h > size and w > size:
+            ret.append(p)
+    return ret
 
 
 class MyDataset(Dataset):
@@ -46,6 +64,33 @@ class MyDataset(Dataset):
     def __getitem__(self, idx):
         img = self.img_data[idx].reshape(3, 32, 32)
         img = np.transpose(img, (1, 2, 0))
+        img = img * self.mask
+        img = img.astype("uint8")
+        h, w = img.shape[:2]
+        center = (h / 2, w / 2)
+        D = np.random.randint(-180, 180 + 1)
+        M = cv2.getRotationMatrix2D(center, D, 1.0)
+        img = cv2.warpAffine(img, M, (h, w))
+        trans = transforms.Compose(
+            [transforms.ToTensor(), transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
+        img = trans(img)
+
+        return img, float(D / 180)
+
+
+class Scenery(Dataset):
+    def __init__(self, img_path):
+        self.mask = circle(349 / 2)
+        self.img_path = clear_path(img_path, size=350)
+
+    def __len__(self):
+        return len(self.img_path)
+
+    def __getitem__(self, idx):
+        img = cv2.imread(self.img_path[idx])
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = random_crop(img, 350)
+        # img = np.transpose(img, (1, 2, 0))
         img = img * self.mask
         img = img.astype("uint8")
         h, w = img.shape[:2]

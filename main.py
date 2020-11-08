@@ -6,20 +6,26 @@
 # @School  : bupt
 # @File    : main.py
 import argparse
+import os
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
-from cifar_ds import MyDataset
+from ds import MyDataset, Scenery
 from net import cnn
 import datetime
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-e", "--epochs", default=10, type=int, help="train epochs")
 parser.add_argument("-b", "--bs", default=32, type=int, help="batch size")
+parser.add_argument('-d', "--dataset", default='scenery', type=str, help="type of dataset")
+parser.add_argument('-o', "--model_name", default='best', type=str, help="model name")
 args = parser.parse_args()
 epochs = args.epochs
 bs = args.bs
+ds = args.dataset
+model_name = args.model_name
 
 if __name__ == '__main__':
     # 判断gpu是否可用
@@ -29,10 +35,17 @@ if __name__ == '__main__':
         device = 'cpu'
     device = torch.device(device)
     # 构建数据读取
-    path = ['imgs/data_batch_1', 'imgs/data_batch_2', 'imgs/data_batch_3', 'imgs/data_batch_4', 'imgs/data_batch_5']
-    val_path = 'imgs/test_batch'
-    train_dst = MyDataset(path)
-    valid_dst = MyDataset(val_path)
+    if ds == 'cifar':
+        path = ['imgs/data_batch_1', 'imgs/data_batch_2', 'imgs/data_batch_3', 'imgs/data_batch_4', 'imgs/data_batch_5']
+        val_path = 'imgs/test_batch'
+        train_dst = MyDataset(path)
+        valid_dst = MyDataset(val_path)
+    if ds == 'scenery':
+        path = 'dataset'
+        img_path = [os.path.join(path, i) for i in os.listdir(path)]
+        split = len(img_path) // 10
+        train_dst = Scenery(img_path[:-split])
+        valid_dst = Scenery(img_path[-split:])
 
     train_loader = torch.utils.data.DataLoader(train_dst, batch_size=bs, shuffle=True, pin_memory=True)
     valid_loader = torch.utils.data.DataLoader(valid_dst, batch_size=bs, shuffle=False, pin_memory=True)
@@ -78,5 +91,5 @@ if __name__ == '__main__':
 
         if val_loss < score:
             score = val_loss
-            torch.save(cnn, 'outputs/last.pth')
+            torch.save(cnn, 'outputs/%s.pth' % model_name)
             print("Best step is %d" % (e))
